@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Custom overrides for Michigan colors -->
     <style>
         * {
             margin: 0;
@@ -187,8 +186,8 @@
         return <div id="three-canvas" ref={containerRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}></div>;
     };
     
-    // CountUp component
-    const CountUp = ({ end, suffix = '', prefix = '', duration = 1.5 }) => {
+    // CountUp component (prefix & suffix handled correctly)
+    const CountUp = ({ end, prefix = '', suffix = '', duration = 1.5 }) => {
         const [count, setCount] = useState(0);
         const ref = useRef(null);
         const hasAnimated = useRef(false);
@@ -237,13 +236,14 @@
             }
         }, []);
         
+        // Stats array with correct prefix/suffix (no double dollar signs or double percent)
         const stats = [
-            { value: 85, suffix: 'M', prefix: '$', label: 'OF PROPERTIES SOLD' },
-            { value: 142, suffix: '', label: 'PROPERTIES SOLD' },
-            { value: 65, suffix: 'M', prefix: '$', label: 'OF PROPERTIES PURCHASED' },
-            { value: 87, suffix: '', label: 'PROPERTIES BOUGHT' },
-            { value: 112, suffix: '', label: 'CLOSE SALES' },
-            { value: 1, suffix: '%', label: 'TOP 1% AGENT IN GRAND RAPIDS' },
+            { value: 85, prefix: '$', suffix: 'M', label: 'OF PROPERTIES SOLD' },
+            { value: 142, prefix: '', suffix: '', label: 'PROPERTIES SOLD' },
+            { value: 65, prefix: '$', suffix: 'M', label: 'OF PROPERTIES PURCHASED' },
+            { value: 87, prefix: '', suffix: '', label: 'PROPERTIES BOUGHT' },
+            { value: 112, prefix: '', suffix: '', label: 'CLOSE SALES' },
+            { value: 1, prefix: '', suffix: '%', label: 'TOP 1% AGENT IN GRAND RAPIDS' },
         ];
         
         const testimonials = [
@@ -305,7 +305,7 @@
                     </div>
                 </section>
                 
-                {/* Stats Section */}
+                {/* Stats Section - Fixed display */}
                 <section id="stats" className="bg-[#f8f9fc] py-16 my-8 rounded-3xl mx-5 md:mx-10 shadow-sm">
                     <div className="container mx-auto px-4">
                         <MotionDiv whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 30 }} transition={{ duration: 0.5 }} viewport={{ once: true }} className="text-center mb-12">
@@ -316,7 +316,7 @@
                             {stats.map((stat, idx) => (
                                 <MotionDiv key={idx} whileHover={{ y: -5 }} className="bg-white p-5 rounded-xl shadow-md border border-yellow-100">
                                     <div className="text-3xl md:text-4xl font-bold text-[#00255A]">
-                                        {stat.prefix && stat.prefix}<CountUp end={stat.value} suffix={stat.suffix} prefix={stat.prefix === '$' ? '$' : ''} duration={1.2} />{stat.suffix && !stat.prefix ? stat.suffix : ''}
+                                        <CountUp end={stat.value} prefix={stat.prefix} suffix={stat.suffix} duration={1.2} />
                                     </div>
                                     <div className="text-xs text-gray-600 uppercase tracking-wide mt-2 font-semibold">{stat.label}</div>
                                 </MotionDiv>
