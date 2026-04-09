@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Grand Rapids Real Estate | Premier Agent in Michigan</title>
+    <!-- Preconnect & Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- TailwindCSS for crisp responsive layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom override for extra crisp spacing and smoothness -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            background-color: #fefcf7;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+        /* Custom three.js canvas container */
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.35;
+        }
+        .content-wrapper {
+            position: relative;
+            z-index: 2;
+            background: transparent;
+        }
+        /* custom hover transitions */
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 35px -12px rgba(0,0,0,0.15);
+        }
+        .btn-gold {
+            background: #b8860b;
+            transition: all 0.3s ease;
+        }
+        .btn-gold:hover {
+            background: #9a7209;
+            transform: scale(1.02);
+        }
+        .btn-dark {
+            background: #2c2c2c;
+            transition: all 0.3s ease;
+        }
+        .btn-dark:hover {
+            background: #1a1a1a;
+            transform: scale(1.02);
+        }
+        @media (max-width: 768px) {
+            .stats-grid {
+                gap: 1.5rem;
+            }
+        }
+        /* custom gradient text */
+        .text-gradient {
+            background: linear-gradient(135deg, #b8860b, #d4af37);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
+    <!-- UMD Libraries: React, ReactDOM, Three, Framer Motion, GSAP for extra smoothness -->
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Framer Motion UMD build (exposes Motion) -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <!-- GSAP for buttery smooth scroll triggers (optional enhancement) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <!-- Babel Standalone for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+
+<div id="root" class="content-wrapper"></div>
+
+<script type="text/babel" data-presets="react">
+    // Destructure React and ReactDOM
+    const { useState, useEffect, useRef } = React;
+    // Framer Motion from UMD global
+    const MotionLib = window.Motion || window.motion;
+    const motion = MotionLib?.motion || window.motion?.motion;
+    // fallback: if framer-motion UMD not fully ready, we'll use simple divs; but it should work.
+    const MotionDiv = motion?.div || ((props) => <div {...props} />);
+    const MotionSpan = motion?.span || ((props) => <span {...props} />);
+    
+    // ---------- Three.js Background Setup ----------
+    const ThreeBackground = () => {
+        const containerRef = useRef(null);
+        useEffect(() => {
+            if (!containerRef.current) return;
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 12);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+            containerRef.current.appendChild(renderer.domElement);
+            
+            // Create floating elegant torus knot + particles
+            const geometry = new THREE.TorusKnotGeometry(1.8, 0.4, 200, 32, 3, 4);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xd4af37,
+                emissive: 0x442200,
+                roughness: 0.3,
+                metalness: 0.7,
+                wireframe: false,
+                transparent: true,
+                opacity: 0.4
+            });
+            const knot = new THREE.Mesh(geometry, material);
+            scene.add(knot);
+            
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 800;
+            const starPositions = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount; i++) {
+                starPositions[i*3] = (Math.random() - 0.5) * 200;
+                starPositions[i*3+1] = (Math.random() - 0.5) * 100;
+                starPositions[i*3+2] = (Math.random() - 0.5) * 60 - 30;
+            }
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0xffdd99, size: 0.12, transparent: true, opacity: 0.5 });
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+            
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xfff5e0, 1);
+            dirLight.position.set(2, 5, 3);
+            scene.add(dirLight);
+            const backLight = new THREE.PointLight(0xb8860b, 0.5);
+            backLight.position.set(-2, 1, -4);
+            scene.add(backLight);
+            
+            let time = 0;
+            const animate = () => {
+                requestAnimationFrame(animate);
+                time += 0.008;
+                knot.rotation.x = time * 0.5;
+                knot.rotation.y = time * 0.3;
+                stars.rotation.y = time * 0.05;
+                stars.rotation.x = time * 0.02;
+                renderer.render(scene, camera);
+            };
+            animate();
+            
+            const handleResize = () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            };
+            window.addEventListener('resize', handleResize);
+            return () => {
+                window.removeEventListener('resize', handleResize);
+                if (containerRef.current) containerRef.current.removeChild(renderer.domElement);
+                renderer.dispose();
+            };
+        }, []);
+        return <div id="three-canvas" ref={containerRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}></div>;
+    };
+    
+    // CountUp component using intersection observer
+    const CountUp = ({ end, suffix = '', prefix = '', duration = 1.5 }) => {
+        const [count, setCount] = useState(0);
+        const ref = useRef(null);
+        const hasAnimated = useRef(false);
+        useEffect(() => {
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && !hasAnimated.current) {
+                    hasAnimated.current = true;
+                    let start = 0;
+                    const step = Math.ceil(end / (60 * duration));
+                    const timer = setInterval(() => {
+                        start += step;
+                        if (start >= end) {
+                            setCount(end);
+                            clearInterval(timer);
+                        } else {
+                            setCount(start);
+                        }
+                    }, 16);
+                    return () => clearInterval(timer);
+                }
+            }, { threshold: 0.3 });
+            if (ref.current) observer.observe(ref.current);
+            return () => observer.disconnect();
+        }, [end, duration]);
+        return <span ref={ref}>{prefix}{count.toLocaleString()}{suffix}</span>;
+    };
+    
+    // Main App Component
+    const App = () => {
+        // GSAP ScrollTrigger integration after mount
+        useEffect(() => {
+            if (window.gsap && window.ScrollTrigger) {
+                window.gsap.registerPlugin(window.ScrollTrigger);
+                window.gsap.utils.toArray('.fade-up').forEach((el) => {
+                    window.gsap.from(el, {
+                        scrollTrigger: {
+                            trigger: el,
+                            start: 'top 85%',
+                            toggleActions: 'play none none reverse',
+                        },
+                        y: 40,
+                        opacity: 0,
+                        duration: 0.8,
+                        ease: 'power2.out'
+                    });
+                });
+            }
+        }, []);
+        
+        // Stats data
+        const stats = [
+            { value: 85, suffix: 'M', prefix: '$', label: 'OF PROPERTIES SOLD' },
+            { value: 142, suffix: '', label: 'PROPERTIES SOLD' },
+            { value: 65, suffix: 'M', prefix: '$', label: 'OF PROPERTIES PURCHASED' },
+            { value: 87, suffix: '', label: 'PROPERTIES BOUGHT' },
+            { value: 112, suffix: '', label: 'CLOSE SALES' },
+            { value: 1, suffix: '%', label: 'TOP 1% AGENT IN GRAND RAPIDS' },
+        ];
+        
+        const testimonials = [
+            { name: "Michael Anderson", role: "Home Buyer", text: "Amazing experience! Sarah helped us find our dream home in Grand Rapids. Her local knowledge and negotiation skills are unmatched. Stress-free from start to finish.", img: "https://assets.cdn.filesafe.space/E2BEbKIK8SvsJICq4vXY/media/69d706803d829c73b2f7f644.png" },
+            { name: "Jennifer Lawson", role: "Seller", text: "Sold our house in just 12 days! The marketing strategy and staging advice were incredible. Highest price in our neighborhood. Thank you!", img: "https://assets.cdn.filesafe.space/E2BEbKIK8SvsJICq4vXY/media/69d70674a64a04ba1500a37d.png" },
+            { name: "David & Emily Carter", role: "Investors", text: "Sarah’s investor insights helped us secure two rental properties in booming areas of Grand Rapids. Honest, professional, and results-driven.", img: "https://assets.cdn.filesafe.space/E2BEbKIK8SvsJICq4vXY/media/69d7066a68c0721170b10730.png" },
+        ];
+        
+        return (
+            <div className="bg-[#fefcf7]">
+                <ThreeBackground />
+                {/* Navigation */}
+                <MotionDiv initial={{ y: -80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6, ease: "easeOut" }} className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm border-b border-amber-100">
+                    <div className="container mx-auto px-5 md:px-10 py-4 flex justify-between items-center flex-wrap gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-amber-800 font-serif">GRAND<span className="text-amber-600"> Realty</span></span>
+                            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">Grand Rapids, MI</span>
+                        </div>
+                        <div className="hidden md:flex gap-7 text-gray-700 font-medium">
+                            <a href="#home" className="hover:text-amber-700 transition">Home</a>
+                            <a href="#stats" className="hover:text-amber-700 transition">Results</a>
+                            <a href="#services" className="hover:text-amber-700 transition">Services</a>
+                            <a href="#featured" className="hover:text-amber-700 transition">Featured</a>
+                            <a href="#contact" className="hover:text-amber-700 transition">Contact</a>
+                        </div>
+                        <a href="#contact" className="bg-amber-700 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-amber-800 transition">Free Consult</a>
+                    </div>
+                </MotionDiv>
+                
+                {/* Hero Section */}
+                <section id="home" className="container mx-auto px-5 md:px-10 py-10 md:py-20">
+                    <div className="flex flex-col lg:flex-row items-center gap-12">
+                        <MotionDiv initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.7 }} className="flex-1 space-y-6">
+                            <div className="inline-flex bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full text-sm font-semibold">🏆 Top 1% Agent in Michigan 2025</div>
+                            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-gray-800 font-serif">Your Partner for All Real Estate Endeavors in <span className="text-gradient">Grand Rapids, Michigan</span></h1>
+                            <p className="text-gray-600 text-lg leading-relaxed">Hi, I'm Sarah Mitchell — your dedicated local expert with over $150M+ in career sales. Whether buying, selling, or investing, I deliver unmatched service and market expertise.</p>
+                            <div className="flex flex-wrap gap-5 pt-4">
+                                <a href="#services" className="bg-amber-700 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-amber-800 transition transform hover:scale-105">BUY A HOME</a>
+                                <a href="#services" className="bg-gray-800 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-gray-900 transition transform hover:scale-105">SELL YOUR PROPERTY</a>
+                            </div>
+                            <div className="flex items-center gap-3 pt-4">
+                                <img src="https://assets.cdn.filesafe.space/E2BEbKIK8SvsJICq4vXY/media/69d70674a64a04ba1500a37d.png" alt="agent" className="w-12 h-12 rounded-full object-cover border-2 border-amber-300" />
+                                <div>
+                                    <div className="flex text-amber-500">★★★★★</div>
+                                    <p className="text-sm font-semibold">Sarah Mitchell | DRE# 0217348</p>
+                                    <p className="text-xs text-gray-500">Voted Best Realtor Grand Rapids 2024</p>
+                                </div>
+                            </div>
+                        </MotionDiv>
+                        <MotionDiv initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.7 }} className="flex-1 flex justify-center">
+                            <img src="https://assets.cdn.filesafe.space/E2BEbKIK8SvsJICq4vXY/media/69d70674a64a04ba1500a37d.png" alt="Realtor Main" className="max-w-sm md:max-w-md lg:max-w-lg rounded-2xl shadow-2xl object-contain drop-shadow-xl" />
+                        </MotionDiv>
+                    </div>
+                </section>
+                
+                {/* Stats Section with Counters */}
+                <section id="stats" className="bg-white py-16 my-8 rounded-3xl mx-5 md:mx-10 shadow-sm">
+                    <div className="container mx-auto px-4">
+                        <MotionDiv whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 30 }} transition={{ duration: 0.5 }} viewport={{ once: true }} className="text-center mb-12">
+                            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 font-serif">My Numbers Speak For Me</h2>
+                            <p className="text-gray-500 mt-2 max-w-xl mx-auto">Proven results in Grand Rapids & surrounding Michigan areas</p>
+                        </MotionDiv>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 stats-grid text-center">
+                            {stats.map((stat, idx) => (
+                                <MotionDiv key={idx} whileHover={{ y: -5 }} className="bg-amber-50/50 p-5 rounded-xl shadow-sm border border-amber-100">
+                                    <div className="text-3xl md:text-4xl font-bold text-amber-800">
+                                        {stat.prefix && stat.prefix}<CountUp end={stat.value} suffix={stat.suffix} prefix={stat.prefix === '$' ? '$' : ''} duration={1.2} />{stat.suffix && !stat.prefix ? stat.suffix : ''}
+                                    </div>
+                                    <div className="text-xs text-gray-600 uppercase tracking-wide mt-2 font-semibold">{stat.label}</div>
+                                </MotionDiv>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+                
+                {/* About Section with family image */}
+                <section className="container mx-auto px-5 md:px-10 py-16 flex flex-col lg:flex-row gap-12 items-center">
+                    <MotionDiv initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} className="flex-1">
+                        <img src="https://assets.cdn.filesafe.space/E2BEbKIK8SvsJICq4vXY/media/69d7066a68c0721170b10730.png" alt="Family and realtor" className="rounded-2xl shadow-xl w-full object-cover" />
+                    </MotionDiv>
+                    <MotionDiv initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} className="flex-1 space-y-5">
+                        <h2 className="text-3xl md:text-4xl font-bold font-serif text-gray-800">Integrity & Expertise — I'm Sarah Mitchell</h2>
+                        <p className="text-gray-600 leading-relaxed">With over 12 years specializing in the Grand Rapids market, I blend local insight with innovative strategies. Whether you're a first-time buyer in East Grand Rapids or selling a luxury property in Forest Hills, my client-first approach ensures seamless transactions. I also invest personally in Michigan real estate, giving you an edge in negotiations and investment opportunities.</p>
+                        <div className="flex gap-4 pt-4">
+                            <div className="bg-amber-100 p-4 rounded-xl text-center w-32"><div className="font-bold text-amber-800">500+</div><div className="text-xs">Happy Clients</div></div>
+                            <div className="bg-amber-100 p-4 rounded-xl text-center w-32"><div className="font-bold text-amber-800">$185M</div><div className="text-xs">Sales Volume</div></div>
+                        </div>
+                    </MotionDiv>
+                </section>
+                
+                {/* Services Cards */}
+                <section id="services" className="bg-[#faf7f0] py-16 px-5 md:px-10">
+                    <div className="container mx-auto">
+                        <MotionDiv whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 30 }} transition={{ duration: 0.5 }} viewport={{ once: true }} className="text-center mb-12">
+                            <h2 className="text-3xl md:text-4xl font-bold font-serif">Tailored Real Estate Services</h2>
+                            <p className="text-gray-600 mt-2">Expert guidance for buyers, sellers & investors in Grand Rapids</p>
+                        </MotionDiv>
+                        <div className="grid md:grid-cols-3 gap-8">
+                            {[
+                                { title: "I Want To Buy a Home", desc: "Find your dream home with personalized search, negotiation expertise, and full market access. Let me help you navigate Grand Rapids neighborhoods.", img: "https://assets.cdn.filesafe.space/E2BEbKIK8SvsJICq4vXY/media/69d706803d829c73b2f7f644.png", link: "#" },
+                                { title: "I Want To Sell My Property", desc: "Maximize value with professional staging, premium marketing, and strategic pricing. Sold 20% faster than market average.", img: "https://assets.cdn.filesafe.space/E2BEbKIK8SvsJICq4vXY/media/69d70674a64a04ba1500a37d.png", link: "#" },
+                                { title: "I Want To Invest in Real Estate", desc: "Fix & flip, rental properties, or wholesale — I provide data-driven investment advice to build your portfolio in Michigan.", img: "https://assets.cdn.filesafe.space/E2BEbKIK8SvsJICq4vXY/media/69d7066a68c0721170b10730.png", link: "#" }
+                            ].map((service, i) => (
+                                <MotionDiv key={i} whileHover={{ y: -8 }} transition={{ type: "spring", stiffness: 200 }} className="bg-white rounded-2xl overflow-hidden shadow-md card-hover">
+                                    <img src={service.img} alt={service.title} className="h-56 w-full object-cover" />
+                                    <div className="p-6">
+                                        <h3 className="text-xl font-bold mb-2">{service.title}</h3>
+                                        <p className="text-gray-500 text-sm mb-4">{service.desc}</p>
+                                        <a href="#" className="text-amber-700 font-semibold inline-flex items-center gap-1">Learn More →</a>
+                                    </div>
+                                </MotionDiv>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+                
+                {/* Testimonials */}
+                <section className="py-16 px-5 md:px-10 relative">
+                    <div className="container mx-auto">
+                        <MotionDiv whileInView={{ opacity: 1 }} initial={{ opacity: 0 }} className="text-center mb-12">
+                            <h2 className="text-3xl md:text-4xl font-bold font-serif">What Clients Say</h2>
+                            <p className="text-gray-500">Real experiences from Grand Rapids homeowners and investors</p>
+                        </MotionDiv>
+                        <div className="grid md:grid-cols-3 gap-8">
+                            {testimonials.map((t, idx) => (
+                                <MotionDiv key={idx} whileHover={{ scale: 1.02 }} className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <img src={t.img} className="w-14 h-14 rounded-full object-cover border-2 border-amber-300" alt={t.name} />
+                                        <div><h4 className="font-bold">{t.name}</h4><p className="text-amber-600 text-sm">{t.role}</p></div>
+                                    </div>
+                                    <p className="text-gray-600 italic">"{t.text}"</p>
+                                    <div className="mt-4 text-amber-400">★★★★★</div>
+                                </MotionDiv>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+                
+                {/* Featured Property */}
+                <section id="featured" className="bg-white py-16 px-5 md:px-10">
+                    <div className="container mx-auto">
+                        <MotionDiv whileInView={{ y: 0, opacity: 1 }} initial={{ y: 30, opacity: 0 }} className="bg-gradient-to-r from-amber-50 to-white rounded-2xl shadow-xl overflow-hidden flex flex-col lg:flex-row">
+                            <div className="lg:w-1/2 p-8 lg:p-12">
+                                <span className="text-amber-700 font-semibold tracking-wide">✨ FEATURED LISTING</span>
+                                <h2 className="text-3xl font-bold mt-2 font-serif">The Grand Heritage Estate</h2>
+                                <p className="text-gray-500 mt-2">245 Lake Michigan Dr NW, Grand Rapids, MI 49504</p>
+                                <div className="text-3xl font-bold text-amber-800 mt-4">$1,875,000</div>
+                                <div className="grid grid-cols-2 gap-4 mt-6">
+                                    <div><span className="font-bold">5</span> Beds</div><div><span className="font-bold">4.5</span> Baths</div><div><span className="font-bold">4,200</span> sqft</div><div><span className="font-bold">3-car</span> Garage</div>
+                                </div>
+                                <p className="text-gray-600 mt-5">Stunning lake views, modern updates, and private backyard. Walk to downtown Grand Rapids. A rare gem in the heart of West Michigan.</p>
+                                <button className="mt-6 bg-amber-700 text-white px-8 py-3 rounded-full font-semibold hover:bg-amber-800 transition">Inquire Now</button>
+                            </div>
+                            <div className="lg:w-1/2 h-80 lg:h-auto bg-cover bg-center" style={{ backgroundImage: "url('https://assets.cdn.filesafe.space/E2BEbKIK8SvsJICq4vXY/media/69d70674a64a04ba1500a37d.png')", backgroundSize: 'cover' }}></div>
+                        </MotionDiv>
+                    </div>
+                </section>
+                
+                {/* CTA + Newsletter */}
+                <section id="contact" className="bg-amber-900 text-white py-16 px-5 md:px-10 relative">
+                    <div className="container mx-auto text-center max-w-3xl">
+                        <MotionDiv whileInView={{ scale: 0.98, opacity: 1 }} initial={{ opacity: 0 }} transition={{ duration: 0.5 }}>
+                            <h2 className="text-3xl md:text-5xl font-bold font-serif">Let's Work Together</h2>
+                            <p className="text-amber-100 mt-4 text-lg">Ready to take the next step in your real estate journey in Grand Rapids? Book a free consultation today.</p>
+                            <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                                <input type="email" placeholder="Your email address" className="px-5 py-3 rounded-full text-gray-800 w-full sm:w-80 outline-none" />
+                                <button className="bg-white text-amber-800 px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition">Get Free Guide →</button>
+                            </div>
+                            <p className="text-amber-200 text-sm mt-6">📞 Call direct: (616) 555-0182 | 📍 123 Monroe Center, Grand Rapids, MI 49503</p>
+                        </MotionDiv>
+                    </div>
+                </section>
+                
+                {/* Footer */}
+                <footer className="bg-gray-900 text-gray-300 py-12 px-5 md:px-10">
+                    <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+                        <div><span className="text-2xl font-bold text-white font-serif">GRAND Realty</span><p className="text-sm mt-2">Luxury & local expertise in Grand Rapids, Michigan. Your trusted partner since 2012.</p></div>
+                        <div><h4 className="font-semibold text-white">Quick Links</h4><ul className="space-y-2 mt-3 text-sm"><li><a href="#" className="hover:text-amber-400">Buy</a></li><li><a href="#" className="hover:text-amber-400">Sell</a></li><li><a href="#" className="hover:text-amber-400">Invest</a></li><li><a href="#" className="hover:text-amber-400">Listings</a></li></ul></div>
+                        <div><h4 className="font-semibold text-white">Contact Info</h4><ul className="space-y-2 mt-3 text-sm"><li>📞 (616) 555-0182</li><li>✉️ hello@grandrapidsrealty.com</li><li>🏢 Grand Rapids, MI 49503</li></ul></div>
+                        <div><h4 className="font-semibold text-white">Follow</h4><div className="flex gap-4 mt-3"><span className="cursor-pointer hover:text-amber-400">Instagram</span><span className="cursor-pointer hover:text-amber-400">Facebook</span><span className="cursor-pointer hover:text-amber-400">LinkedIn</span></div><p className="text-xs mt-6">© 2025 Grand Rapids Real Estate | DRE# 0217348</p></div>
+                    </div>
+                </footer>
+            </div>
+        );
+    };
+    
+    // Mount App
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+</script>
+</body>
+</html>
